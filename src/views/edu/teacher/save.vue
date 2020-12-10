@@ -48,6 +48,28 @@
           placeholder="请输入讲师简介"
         ></el-input>
       </el-form-item>
+
+      <el-form-item label="讲师头像">
+        <pan-thumb :image="teacher.avatar" />
+        <el-button type="primary" icon="el-icon-upload" @click="imagecropperShow = true"
+          >更换头像</el-button
+        >
+        <!--v-show：是否显示上传组件
+        :key：类似于id，如果一个页面多个图片上传控件，可以做区分
+        :url：后台上传的url地址
+        @close：关闭上传组件
+        @crop-upload-success：上传成功后的回调  -->
+        <image-cropper
+          v-show="imagecropperShow"
+          :width="300"
+          :height="300"
+          :key="imagecropperKey"
+          :url="BASE_API + '/eduoss/fileoss/uploadFile'"
+          field="file"
+          @close="close"
+          @crop-upload-success="cropSuccess"
+        />
+      </el-form-item>
       <el-form-item>
         <el-button
           type="primary"
@@ -62,7 +84,10 @@
 
 <script>
 import t from "@/api/edu/teacher";
+import ImageCropper from "@/components/ImageCropper"
+import PanThumb from "@/components/PanThumb"//引入组件
 export default {
+  components:{ImageCropper,PanThumb},//声明组件
   data() {
     return {
       teacher: {
@@ -73,6 +98,10 @@ export default {
         career: "",
         intro: "",
       },
+      imagecropperShow: false,//是否显示上传弹框
+      imagecropperKey: 0,//上传组件的key
+      BASE_API: process.env.BASE_API,//获取url地址
+      saveBtnDisabled: false,
       rules: {
         name: [
           { required: true, message: "请输入讲师姓名", trigger: "blur" },
@@ -86,7 +115,6 @@ export default {
         ],
         level: [{ required: true, message: "请选择讲师头衔", trigger: "blur" }],
       },
-      saveBtnDisabled: false,
     };
   },
   created() {
@@ -95,11 +123,12 @@ export default {
       this.getTeacherInfo(id);
     }
   },
-  watch:{
-      $route(to,from){//路由改变,此处是监听路由发生变化后进行相应的操作
-        console.log("路由发生变化")
-        this.resetData()
-      }
+  watch: {
+    $route(to, from) {
+      //路由改变,此处是监听路由发生变化后进行相应的操作
+      console.log("路由发生变化");
+      this.resetData();
+    },
   },
   methods: {
     //提交表单
@@ -195,6 +224,17 @@ export default {
     },
     redirectToList() {
       this.$router.push({ path: "/teacher/list" }); //跳转页面
+    },
+    close() {
+      //关闭
+      this.imagecropperShow=false
+      this.imagecropperKey=this.imagecropperKey+1//重新创建组件
+    },
+    cropSuccess(data) {
+      //上传成功后的显示
+      this.imagecropperShow=false
+      this.teacher.avatar=data.url
+      this.imagecropperKey=this.imagecropperKey+1//重新创建组件
     },
   },
 };
