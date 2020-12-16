@@ -7,5 +7,5 @@ export default {
             url: `/eduservice/edu-subject/listSubjectTree`,
             method: 'get',
         })
-    }
+    },
 }

@@ -10,6 +10,12 @@ export default {
             data: teacherQuery
         })
     },
+    getAllTeachers(){
+        return request({
+            url:"/eduservice/edu-teacher/findAll",
+            method:"get"
+        })
+    },
     removeTeacherById(id) {
         return request({
             url: `/eduservice/edu-teacher/deleteTeacher/${id}`,
