@@ -22,15 +22,19 @@ export default {
   data() {
     return {
       saveBtnDisabled: false, // 保存按钮是否禁用
+      courseId:''
     };
   },
   created() {
     console.log("publish created");
+    if(this.$route.params&&this.$route.params.id){
+      this.courseId=this.$route.params.id
+    }
   },
   methods: {
     previous() {
       console.log("previous");
-      this.$router.push({ path: "/course/chapter/1" });
+      this.$router.push({ path: `/course/chapter/${this.courseId}`});
     },
     publish() {
       console.log("publish");

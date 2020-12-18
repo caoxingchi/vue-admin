@@ -81,7 +81,7 @@
       </el-form-item>
       <!-- 课程简介 TODO -->
       <el-form-item label="课程简介" prop="description">
-        <tinymce :height="300" v-model="courseInfo.description"/>
+        <tinymce :height="300" v-model="courseInfo.description" />
       </el-form-item>
       <!-- 课程封面 TODO -->
       <el-form-item label="课程封面">
@@ -93,7 +93,7 @@
           :on-success="handlerCoverSuccess"
           :before-upload="beforeUpload"
         >
-          <img :src="courseInfo.cover" style="width: 75%; height:75%" />
+          <img :src="courseInfo.cover" style="width: 75%; height: 75%" />
         </el-upload>
       </el-form-item>
       <el-form-item label="课程价格">
@@ -123,10 +123,10 @@
 import course from "@/api/edu/course";
 import teacher from "@/api/edu/teacher";
 import subject from "@/api/edu/subject";
-import Tinymce from '@/components/Tinymce';//引入组件
+import Tinymce from "@/components/Tinymce"; //引入组件
 
 export default {
-  components:{Tinymce},//声明组件
+  components: { Tinymce }, //声明组件
   data() {
     return {
       saveBtnDisabled: false,
@@ -140,6 +140,8 @@ export default {
         cover: "https://itcolors-edu.oss-cn-hangzhou.aliyuncs.com/default.png",
         price: 0,
       },
+      courseId: "",
+      doUpdateCourseInfo: false, //是否是更新 默认是false
       teacherList: [],
       subjectList: [],
       firSubjectList: [], //一级分类
@@ -154,27 +156,38 @@ export default {
     };
   },
   created() {
-    this.getFirSubject(); //获取一级分类的所有数据
-    this.getTeacherList(); //获取讲师的所有信息
+    if (this.$route.params && this.$route.params.id) {
+      this.doUpdateCourseInfo = true; //假如路径上有id 则就把该值修改为true 此时为修改操作页面
+      this.courseId = this.$route.params.id;
+      this.getCourseInfo();
+    } else {
+      this.getFirSubject(); //获取一级分类的所有数据
+      this.getTeacherList(); //获取讲师的所有信息
+    }
+  },
+  watch: {
+    $route(to, from) {
+      //路由改变,此处是监听路由发生变化后进行相应的操作
+      console.log("路由发生变化");
+      this.resetData();
+    },
   },
   methods: {
+    //重置表单
+    resetData() {
+      this.courseInfo = {};
+      this.courseId = "";
+    },
     saveOrUpdate(form) {
       console.log("进入表单验证" + this.$refs[form]);
       this.$refs[form].validate((valid) => {
         if (valid) {
           console.log("next to chapter");
-          course
-            .addCourseInfo(this.courseInfo)
-            .then((resp) => {
-              if (resp.success === true) {
-                this.$message({
-                  type: "success",
-                  message: "添加课程信息成功",
-                });
-                this.$router.push({ path: `/course/chapter/${resp.data.courseId}` }); //跳转页面
-              }
-            })
-            .catch();
+          if (this.doUpdateCourseInfo) {
+            this.updateCourseInfo(); //更新课程信息
+          } else {
+            this.saveCourseInfo(); //保存课程信息
+          }
         } else {
           console.log("submit error!");
           return false;
@@ -205,7 +218,67 @@ export default {
         this.teacherList = resp.data.eduTeachers;
       });
     },
+    //获取课程的信息
+    getCourseInfo() {
+      course.getCourseInfo(this.courseId).then((resp) => {
+        this.courseInfo = resp.data.courseInfo;
+        console.log("sasfaf" + this.courseInfo.subjectParentId);
+        //获取一级分类
 
+        subject.listSubjectTree().then((resp) => {
+          console.log("进入进行树型展示");
+          this.firSubjectList = resp.data.list;
+          console.log("firSubjectList=" + this.firSubjectList);
+          this.firSubjectList.forEach((subject) => {
+            console.log("sasfaf" + this.courseInfo.subjectParentId);
+            if (subject.id == this.courseInfo.subjectParentId) {
+              this.secSubjectList = subject.children;
+            }
+          });
+        });
+        this.getTeacherList();
+      });
+    },
+    //更新课程信息
+    updateCourseInfo() {
+      course
+        .updateCourseInfo(this.courseInfo)
+        .then((resp) => {
+          if (resp.success === true) {
+            this.$message({
+              type: "success",
+              message: "修改课程信息成功",
+            });
+            this.$router.push({ path: `/course/chapter/${this.courseId}` }); //跳转页面
+          }
+        })
+        .catch((err) => {
+          this.$message({
+            type: "error",
+            message: "修改课程信息失败",
+          });
+        });
+    },
+    //保存课程信息
+    saveCourseInfo() {
+      course
+        .addCourseInfo(this.courseInfo)
+        .then((resp) => {
+          if (resp.success === true) {
+            this.$message({
+              type: "success",
+              message: "添加课程信息成功",
+            });
+            this.$router.push({ path: `/course/chapter/${resp.data.courseId}` }); //跳转页面
+          }
+        })
+        .catch((err) => {
+          this.$message({
+            type: "error",
+            message: "修改课程信息失败",
+          });
+        });
+    },
     //成功上传封面
     handlerCoverSuccess(res, file) {
       console.log(res); // 上传响应
