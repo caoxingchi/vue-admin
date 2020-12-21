@@ -13,11 +13,15 @@
         <p>
           {{ chapter.title }}
           <span class="acts">
-            <el-button type="text">添加课时</el-button>
+            <el-button type="text" @click="openAddVideoDialog(chapter.id)"
+              >添加课时</el-button
+            >
             <el-button style="" type="text" @click="openUpdateDialog(chapter.id)"
               >编辑</el-button
             >
-            <el-button type="text" @click="deleteChapterDialog(chapter.id)">删除</el-button>
+            <el-button type="text" @click="deleteChapterDialog(chapter.id)"
+              >删除</el-button
+            >
           </span>
         </p>
         <ul class="chapterList videoList">
@@ -26,8 +30,12 @@
               {{ video.title }}
 
               <span class="acts">
-                <el-button type="text">编辑</el-button>
-                <el-button type="text">删除</el-button>
+                <el-button type="text" @click="openUpdateVideoDialog(video.id)"
+                  >编辑</el-button
+                >
+                <el-button type="text" @click="deleteVideoDialog(video.id)"
+                  >删除</el-button
+                >
               </span>
             </p>
           </li>
@@ -37,8 +45,12 @@
     <el-button @click="previous">上一步</el-button>
     <el-button :disabled="saveBtnDisabled" type="primary" @click="next">下一步</el-button>
 
-    <!-- 章节的添加 -->
-    <el-dialog title="章节" :visible.sync="dialogFormVisible" :before-close="handleClose">
+    <!-- 章节的添加 和 修改 dialog-->
+    <el-dialog
+      title="章节"
+      :visible.sync="dialogFormVisible"
+      :before-close="closeChapterDialog"
+    >
       <el-form :model="chapter">
         <el-form-item label="章节名称" :label-width="formLabelWidth">
           <el-input v-model="chapter.title" style="width: 50%"></el-input>
@@ -53,27 +65,76 @@
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
-        <el-button @click="closeDialog">取 消</el-button>
-        <el-button type="primary" @click="openChapterDialog">确 定</el-button>
+        <el-button @click="closeChapterDialog">取 消</el-button>
+        <el-button type="primary" @click="saveOrUpdateChapter">确 定</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 添加修改小节 dialog-->
+    <el-dialog
+      :visible.sync="dialogVideoVisible"
+      title="添加课时"
+      :before-close="closeVideoDialog"
+    >
+      <el-form :model="video" label-width="120px">
+        <el-form-item label="课时标题">
+          <el-input v-model="video.title" />
+        </el-form-item>
+        <el-form-item label="课时排序">
+          <el-input-number v-model="video.sort" :min="0" controls-position="right" />
+        </el-form-item>
+        <el-form-item label="是否免费">
+          <el-radio-group v-model="video.free">
+            <el-radio :label=true>免费</el-radio>
+            <el-radio :label=false>默认</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="上传视频">
+          <!-- TODO -->
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="closeVideoDialog">取 消</el-button>
+        <el-button
+          :disabled="saveVideoBtnDisabled"
+          type="primary"
+          @click="saveOrUpdateVideo"
+          >确 定</el-button
+        >
       </div>
     </el-dialog>
   </div>
 </template>
 <script>
 import chapter from "@/api/edu/chapter";
+import video from "@/api/edu/video";
 
 export default {
+  /* ====================================数据====================================== */
   data() {
     return {
       saveBtnDisabled: false, // 保存按钮是否禁用
+      saveVideoBtnDisabled: false, //保存小节按钮是否禁用
       chapterVideoList: [], //章节小节视频
       courseId: "",
-      dialogFormVisible: false, //弹框的显示效果
+      chapterId: "", //章节id
+      dialogFormVisible: false, //章节弹框的显示效果
+      dialogVideoVisible: false, //小节处理弹框显示效果
       formLabelWidth: "120px", //弹框的大小
+      //章节对象
       chapter: {
         title: "",
         sort: 0,
         courseId: "",
+      },
+      video: {
+        // 课时对象
+        title: "",
+        courseId:"",
+        chapterId:"",
+        sort: 0,
+        free: true,
+        videoSourceId: "",
       },
     };
   },
@@ -85,24 +146,124 @@ export default {
   },
 
   methods: {
-    //添加或者更新数据
-    openChapterDialog() {
+    /* ==============================小节部分============================================= */
+    //添加或修改小节
+    saveOrUpdateVideo() {
+      if (!this.video.id) {
+        this.addVideo();
+      } else {
+        this.updateVideo();
+      }
+      this.closeVideoDialog();
+      this.getChapterVideo();
+    },
+    //打开addvideo弹框
+    openAddVideoDialog(chapterId) {
+      console.log("打开video弹框");
+      this.chapterId = chapterId;
+      this.dialogVideoVisible = true;
+    },
+    //打开更新video
+    openUpdateVideoDialog(videoId) {
+      video.getVideoInfo(videoId).then((resp) => {
+        if (resp.success === true) {
+          this.video = resp.data.video;
+        }
+      });
+      
+      console.log("videoId=" + this.video.title+"chapterId="+ this.video.chapterId);
+      console.log("free?" + this.video.free);
+      this.dialogVideoVisible = true;
+    },
+
+    deleteVideoDialog(videoId) {
+      console.log("打开删除video弹框");
+      this.$confirm("是否删除该课时", "删除", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "error",
+      })
+        .then(() => {
+          video.deleteVideo(videoId).then((resp) => {
+            if (resp.success === true) {
+              this.$message({
+                type: "success",
+                message: "删除成功!",
+              });
+              this.getChapterVideo();
+            }
+          });
+        })
+        .catch(() => {
+          console.log("取消删除");
+        });
+    },
+    //添加小节
+    addVideo() {
+      console.log("添加小节操作");
+      this.video.courseId = this.courseId;
+      this.video.chapterId = this.chapterId;
+      console.log(this.video);
+      video
+        .addVideo(this.video)
+        .then((resp) => {
+          if (resp.success === true) {
+            this.$message({
+              type: "success",
+              message: "添加课时成功",
+            });
+          }
+        })
+        .catch((err) => {
+          this.$message({
+            type: "error",
+            message: "添加课时失败",
+          });
+        });
+    },
+    //更新小节
+    updateVideo(videoId) {
+      console.log("修改小节操作");
+      video
+        .updateVideo(this.video)
+        .then((resp) => {
+          if (resp.success === true) {
+            this.$message({
+              type: "success",
+              message: "修改课时成功",
+            });
+          }
+        })
+        .catch((err) => {
+          this.$message({
+            type: "error",
+            message: "修改课时失败",
+          });
+        });
+    },
+    //关闭弹框 小节的处理 也进行了表单的重置
+    closeVideoDialog() {
+      this.dialogVideoVisible = false; //关闭video弹框
+      console.log("执行重置表单++video");
+      this.video = {
+        // 课时对象
+        title: "",
+        sort: 0,
+        free: true,
+        videoSourceId: "",
+      };
+    },
+    /* ==============================章节部分============================================= */
+    //添加或者更新章节数据
+    saveOrUpdateChapter() {
       if (!this.chapter.id) {
         this.addChapter();
       } else {
         this.updateChapter();
       }
+      this.closeChapterDialog();
     },
-    //处理关闭
-    handleClose() {
-      console.log("关闭弹框了");
-      this.closeDialog();
-    },
-    //关闭弹框的时候
-    closeDialog() {
-      this.dialogFormVisible = false;
-      this.resetData();
-    },
+
     //添加章节
     addChapter() {
       this.chapter.courseId = this.courseId;
@@ -125,7 +286,6 @@ export default {
             message: "添加章节失败",
           });
         });
-      this.closeDialog();
     },
     //打开更新章节的弹框
     openUpdateDialog(chapterId) {
@@ -155,7 +315,6 @@ export default {
             message: "修改章节失败",
           });
         });
-      this.closeDialog();
     },
     //删除章节
     deleteChapterDialog(chapterId) {
@@ -171,23 +330,26 @@ export default {
                 type: "success",
                 message: "删除成功!",
               });
-              this.getChapterVideo()
+              this.getChapterVideo();
             }
-          })
+          });
         })
         .catch(() => {
           console.log("取消删除");
         });
-        
     },
-    //重置表单
-    resetData() {
-      console.log("执行重置表单");
+
+    //关闭弹框的时候 章节的处理 并且进行表单的重置
+    closeChapterDialog() {
+      this.dialogFormVisible = false; //关闭章节弹框
+      console.log("执行重置表单+++chapter");
       this.chapter = {
         title: "",
         sort: 0,
       };
     },
+    /* =================================公共部分========================================= */
+
     //获取所有的章节小节
     getChapterVideo() {
       chapter.getAllChapterVideoByCourseId(this.courseId).then((resp) => {
