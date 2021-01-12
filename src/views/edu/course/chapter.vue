@@ -212,6 +212,7 @@ export default {
               type: "success",
               message: "添加课时成功",
             });
+            this.getChapterVideo();
           }
         })
         .catch((err) => {
@@ -232,6 +233,7 @@ export default {
               type: "success",
               message: "修改课时成功",
             });
+            this.getChapterVideo();
           }
         })
         .catch((err) => {

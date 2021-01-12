@@ -37,5 +37,19 @@ export default {
             url:`/eduservice/edu-course/publishCourse/${courseId}`,
             method:'post'
         })
+    },
+    pageConditionListCourse(current,limit,courseQuery){
+        return request({
+            url:`/eduservice/edu-course/pageCourseCondition/${current}/${limit}`,
+            method:'post',
+            data:courseQuery
+        })
+    },
+    //删除课程信息
+    removeCourse(courseId){
+        return request({
+            url:`/eduservice/edu-course/removeCourse/${courseId}`,
+            method:"delete"
+        })
     }
 }
