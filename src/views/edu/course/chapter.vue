@@ -85,12 +85,35 @@
         </el-form-item>
         <el-form-item label="是否免费">
           <el-radio-group v-model="video.free">
-            <el-radio :label=true>免费</el-radio>
-            <el-radio :label=false>默认</el-radio>
+            <el-radio :label="true">免费</el-radio>
+            <el-radio :label="false">默认</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="上传视频">
           <!-- TODO -->
+          <el-upload
+            :on-success="handleVodUploadSuccess"
+            :on-remove="handleVodRemove"
+            :before-remove="beforeVodRemove"
+            :on-exceed="handleUploadExceed"
+            :file-list="fileList"
+            :action="BASE_API + '/eduvod/video/uploadVideo'"
+            :limit="1"
+            :drag="true"
+            class="upload-demo"
+          >
+            <el-button size="small" type="primary">上传视频</el-button>
+            <el-tooltip placement="right-end">
+              <div slot="content">
+                最大支持1G，<br />
+                支持3GP、ASF、AVI、DAT、DV、FLV、F4V、<br />
+                GIF、M2T、M4V、MJ2、MJPEG、MKV、MOV、MP4、<br />
+                MPE、MPG、MPEG、MTS、OGG、QT、RM、RMVB、<br />
+                SWF、TS、VOB、WMV、WEBM 等视频格式上传
+              </div>
+              <i class="el-icon-question" />
+            </el-tooltip>
+          </el-upload>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -121,6 +144,8 @@ export default {
       dialogFormVisible: false, //章节弹框的显示效果
       dialogVideoVisible: false, //小节处理弹框显示效果
       formLabelWidth: "120px", //弹框的大小
+      BASE_API: process.env.BASE_API, //获取url地址
+      fileList: [], //文件list
       //章节对象
       chapter: {
         title: "",
@@ -130,11 +155,12 @@ export default {
       video: {
         // 课时对象
         title: "",
-        courseId:"",
-        chapterId:"",
+        courseId: "",
+        chapterId: "",
         sort: 0,
         free: true,
         videoSourceId: "",
+        videoOriginalName: "",
       },
     };
   },
@@ -170,8 +196,8 @@ export default {
           this.video = resp.data.video;
         }
       });
-      
-      console.log("videoId=" + this.video.title+"chapterId="+ this.video.chapterId);
+
+      console.log("videoId=" + this.video.title + "chapterId=" + this.video.chapterId);
       console.log("free?" + this.video.free);
       this.dialogVideoVisible = true;
     },
@@ -253,7 +279,10 @@ export default {
         sort: 0,
         free: true,
         videoSourceId: "",
+        videoOriginalName: "",
       };
+      this.fileList = [];
+      //this.saveVideoBtnDisabled = true;
     },
     /* ==============================章节部分============================================= */
     //添加或者更新章节数据
@@ -349,6 +378,58 @@ export default {
         title: "",
         sort: 0,
       };
+    },
+    /* =======================================视频小节管理 上传 删除============================================== */
+
+    //成功回调
+    handleVodUploadSuccess(response, file, fileList) {
+      if (response.success === true) {
+        this.video.videoSourceId = response.data.videoId;
+        this.video.videoOriginalName = file.name;
+        this.saveVideoBtnDisabled = false;
+      }
+    },
+    //视图上传多于一个视频
+    handleUploadExceed(files, fileList) {
+      this.$message.warning("想要重新上传视频，请先删除已上传的视频");
+    },
+
+    handleVodRemove(file, fileList) {
+      //调用视频接口中的删除方法
+      var videoSourceId = this.video.videoSourceId;
+      if (videoSourceId!="") {
+        video
+          .deleteVideoFromAli(this.video.videoSourceId)
+          .then((resp) => {
+            if (resp.success === true) {
+              this.$message({
+                type: "success",
+                message: "视频移除成功",
+              });
+              //删除成功后需要将视频相关的信息也清除掉
+              this.video.videoSourceId = ""
+              this.video.videoOriginalName = ""
+              this.fileList=[]
+              //this.saveVideoBtnDisabled = true;
+            }
+          })
+          .catch((err) => {
+            this.$message({
+              type: "error",
+              message: "视频移除失败",
+            });
+          });
+        console.log("移除视频");
+      } else {
+        this.$message({
+          type: "error",
+          message: "视频还未上传完毕",
+        });
+      }
+    },
+    beforeVodRemove(file, fileList) {
+      console.log("移除之前");
+      return this.$confirm(`是否移除该视频${file.name}？`);
     },
     /* =================================公共部分========================================= */
 

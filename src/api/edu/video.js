@@ -24,11 +24,18 @@ export default {
             data:video
         })
     },
-    //删除小节
+    //删除整个小节
     deleteVideo(videoId){
         return request({
             url:`/eduservice/edu-video/deleteVideo/${videoId}`,
             method:'delete',
+        })
+    },
+    //删除单独的视频小节部分
+    deleteVideoFromAli(videoSourceId){
+        return request({
+            url:`/eduvod/video/deleteVideo/${videoSourceId}`,
+            method:'delete'
         })
     }
 
