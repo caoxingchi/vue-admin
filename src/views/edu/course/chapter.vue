@@ -102,8 +102,11 @@
             :drag="true"
             class="upload-demo"
           >
-            <el-button size="small" type="primary">上传视频</el-button>
-            <el-tooltip placement="right-end">
+
+            <!-- <el-button size="small" type="primary">上传视频</el-button> -->
+            拖动或点击上传
+          </el-upload>
+          <el-tooltip placement="right-end">
               <div slot="content">
                 最大支持1G，<br />
                 支持3GP、ASF、AVI、DAT、DV、FLV、F4V、<br />
@@ -113,7 +116,6 @@
               </div>
               <i class="el-icon-question" />
             </el-tooltip>
-          </el-upload>
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
