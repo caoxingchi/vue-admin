@@ -148,6 +148,7 @@ export default {
       formLabelWidth: "120px", //弹框的大小
       BASE_API: process.env.BASE_API, //获取url地址
       fileList: [], //文件list
+      videos:{},//用于回显
       //章节对象
       chapter: {
         title: "",
@@ -196,6 +197,10 @@ export default {
       video.getVideoInfo(videoId).then((resp) => {
         if (resp.success === true) {
           this.video = resp.data.video;
+          //进行回显数据
+          this.fileList=[]
+          this.videos.name=this.video.videoOriginalName
+          this.fileList.push(this.videos)
         }
       });
 
@@ -284,6 +289,7 @@ export default {
         videoOriginalName: "",
       };
       this.fileList = [];
+      this.videos={}
       //this.saveVideoBtnDisabled = true;
     },
     /* ==============================章节部分============================================= */
