@@ -71,7 +71,7 @@
         <!-- 上传图片 banner -->
         <el-form-item label="上传banner图片" :label-width="formLabelWidth">
           <el-upload
-            :action="BASE_API + '/eduoss/fileoss/uploadFile/banner'"
+            :action="BASE_API + '/eduoss/fileoss/uploadFile/picture'"
             list-type="picture-card"
             :auto-upload="true"
             :drag="true"
@@ -120,7 +120,7 @@ export default {
     return {
       bannerList: [],
       imageList: [], //
-      image:{},//一个对象来存储地址 用于回显
+      image: {}, //一个对象来存储地址 用于回显
       current: 1,
       limit: 5,
       total: 0, //总数
@@ -201,7 +201,7 @@ export default {
             message: "获取数据失败--banner",
           });
         });
-      
+
     },
     //保存修改 提交表单
     submitForm(form) {
@@ -216,6 +216,8 @@ export default {
                 if (resp.success === true) {
                   this.messageBox(this.successBox, "修改成功");
                   this.pageBanners();
+                  this.dialogFormVisible = false;
+                  this.restData(); //重置数据
                 }
               })
               .catch((err) => {
@@ -231,6 +233,8 @@ export default {
                 if (resp.success === true) {
                   this.messageBox(this.successBox, "添加成功");
                   this.pageBanners(); //获取数据
+                  this.dialogFormVisible = false;
+                  this.restData(); //重置数据
                 }
               })
               .catch((err) => {
@@ -242,8 +246,6 @@ export default {
           return false;
         }
       });
-      this.dialogFormVisible = false;
-      this.restData(); //重置数据
     },
     //移除banner  会用到远程调用方法 调用删除
     removeDataById(bannerId) {
@@ -319,8 +321,8 @@ export default {
     //重置数据
     restData() {
       this.crmBanner = {};
-      this.imageList=[]
-      this.image={}
+      this.imageList = [];
+      this.image = {};
     },
 
     //弹框的封装
@@ -334,7 +336,7 @@ export default {
     //回显图片
     echoImage() {
       this.imageList = [];
-      this.image.url=this.crmBanner.imageUrl
+      this.image.url = this.crmBanner.imageUrl;
       this.imageList.push(this.image);
     },
   },

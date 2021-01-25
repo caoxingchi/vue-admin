@@ -87,14 +87,22 @@
       <el-form-item label="课程封面">
         <el-upload
           style="width: 60%"
-          class="avatar-uploader"
-          :show-file-list="false"
-          :action="BASE_API + '/eduoss/fileoss/uploadFile'"
+          :file-list="coverList"
+          :action="BASE_API + '/eduoss/fileoss/uploadFile/picture'"
           :on-success="handlerCoverSuccess"
           :before-upload="beforeUpload"
+          :before-remove="handleBeforeReomve"
+          :on-remove="handleRemove"
+          :limit="1"
+          :auto-upload="true"
+          list-type="picture-card"
         >
-          <img :src="courseInfo.cover" style="width: 75%; height: 75%" />
+          <i slot="default" class="el-icon-plus"></i>
+          <div slot="file" slot-scope="{ file }">
+            <img class="el-upload-list__item-thumbnail" :src="file.url" alt="" />
+          </div>
         </el-upload>
+        <img :src="courseInfo.cover" style="width: 50%; height: 50%" />
       </el-form-item>
       <el-form-item label="课程价格">
         <el-input-number
@@ -144,6 +152,8 @@ export default {
       doUpdateCourseInfo: false, //是否是更新 默认是false
       teacherList: [],
       subjectList: [],
+      coverList: [],
+      cover: {}, //用于回显图片的对象
       firSubjectList: [], //一级分类
       secSubjectList: [], //二级分类
       BASE_API: process.env.BASE_API, //获取url地址
@@ -173,6 +183,17 @@ export default {
     },
   },
   methods: {
+
+     //移除图片
+    handleBeforeReomve(file) {
+      return this.$confirm(`是否移除该图片${file.name}？`);
+    },
+    handleRemove() {
+      if(this.cover.url!=null||this.cover.url!=""){
+        this.cover={}
+        this.courseInfo.cover=""
+      }
+    },
     //重置表单
     resetData() {
       this.courseInfo = {};
@@ -222,6 +243,7 @@ export default {
     getCourseInfo() {
       course.getCourseInfo(this.courseId).then((resp) => {
         this.courseInfo = resp.data.courseInfo;
+        this.echoImage(); //回显图片
         console.log("sasfaf" + this.courseInfo.subjectParentId);
         //获取一级分类
 
@@ -283,20 +305,28 @@ export default {
     handlerCoverSuccess(res, file) {
       console.log(res); // 上传响应
       console.log(URL.createObjectURL(file.raw)); // base64编码
-      this.courseInfo.cover = res.data.url;
+      if (res.success === true) {
+        this.courseInfo.cover = res.data.url;
+      }
     },
     //在上传之前
     beforeUpload(file) {
       const isJPG = file.type === "image/jpeg";
-      const isLt2M = file.size / 1024 / 1024 < 2;
+      const isLt2M = file.size / 1024 / 1024 < 10;
 
       if (!isJPG) {
         this.$message.error("上传头像图片只能是 JPG 格式!");
       }
       if (!isLt2M) {
-        this.$message.error("上传头像图片大小不能超过 2MB!");
+        this.$message.error("上传头像图片大小不能超过 10MB!");
       }
       return isJPG && isLt2M;
+    },
+    //回显图片
+    echoImage() {
+      this.coverList = [];
+      this.cover.url = this.courseInfo.cover;
+      this.coverList.push(this.cover);
     },
   },
 };

@@ -152,8 +152,8 @@ export const constantRouterMap = [
       {
         path: 'list',
         component: () => import('@/views/cms/banner/list'), // Parent router-view
-        name: 'banner展示',
-        meta: { title: 'banner展示' },
+        name: 'banner管理',
+        meta: { title: 'banner管理' },
 
       },
     ]
